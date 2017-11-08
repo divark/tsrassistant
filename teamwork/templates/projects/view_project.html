@@ -146,63 +146,85 @@
                     {{ project.get_content_as_markdown|safe }}
                 </div>
                 <div>
-                    <p>
-                        <strong>Project Owner</strong>
-                        <a href="{% url 'profile' project_owner.user.username %}">
-                        {% if project_owner.isGT %}
-                            <span class="label label-success">
-                        {% elif project_owner.isProf %}
+                    <div class="box box-success collapsed-box">
+                        <div class="box-header with-border">
+                            <strong>Project Owner</strong>
+                            &nbsp;
+                            <a href="{% url 'profile' project_owner.user.username %}">
+                            {% if project_owner.isGT %}
+                                <span class="label label-success">
+                            {% elif project_owner.isProf %}
+                                <span class="label label-warning">
+                            {% else %}
+                                <span class="label label-info">
+                            {% endif %}
+                                {{ project.creator.username }}
+                            </span></a>
+                            &nbsp;&nbsp;&nbsp;&nbsp;
+                            <strong>Desired Skills</strong>
+                            &nbsp;
+                            {% if project.desired_skills != none %}
+                            {% for skill in project.desired_skills.all %}
                             <span class="label label-warning">
-                        {% else %}
-                            <span class="label label-info">
-                        {% endif %}
-                            {{ project.creator.username }}
-                        </span></a>
-                    </p>
-                    <p>
-                        <strong>Scrum Master</strong>
-                        <a href="{% url 'profile' project.scrum_master.username %}">
-                            <span class="label label-info">
-                                {{ project.scrum_master.username }}
+                                {{ skill.skill }}
                             </span>
-                        </a>
-                    </p>
-                    <p>
-                        <strong>Teacher Assistant</strong>
-                        <a href="{% url 'profile' project.ta.username %}">
-                            <span class="label label-info">
-                                {{ project.ta.username }}
+                            &nbsp;
+                            {% endfor %}
+                            {% endif %}
+                            <div class="box-tools pull-right">
+                                <button type="button" class="btn btn-box-tool" data-widget="collapse">More Info</button>
+                            </div>
+                            <!-- /.box-tools -->
+                        </div>
+                        <!-- /.box-header -->
+                        <div class="box-body" style="display: none;">
+                            <strong>Teacher Assistant</strong>
+                            &nbsp;
+                            <a href="{% url 'profile' project.ta.username %}">
+                                <span class="label label-info">
+                                    {{ project.ta.username }}
+                                </span>
+                            </a>
+                            &nbsp;&nbsp;&nbsp;&nbsp;
+                            <strong>Members</strong>
+                            &nbsp;
+                            {% for mem in project.members.all %}
+                            {% if mem.username != null %}
+                            <a href="{% url 'profile' mem.username %}">
+                            <span class="label label-primary">
+                                {{ mem.username }}
                             </span>
-                        </a>
-                    </p>
-                    <p><strong>Members</strong>
-                        {% for mem in project.members.all %}
-                        {% if mem.username != null %}
-                        <a href="{% url 'profile' mem.username %}">
-                        <span class="label label-primary">
-                            {{ mem.username }}
-                        </span>
-                        </a>
-                        {% endif %}
-                        {% endfor %}
-                    </p>
-                    <p><strong>Desired Skills</strong>
-                        {% if project.desired_skills != none %}
-                        {% for skill in project.desired_skills.all %}
-                        <span class="label label-warning">
-                            {{ skill.skill }}
-                        </span>
-                        {% endfor %}
-                        {% endif %}
-                    </p>
-
-                    <p><strong>Meeting Location</strong>
-                            {{ project.ta_location }}
-                    </p>
-
-                    <p><strong>Meeting Time</strong>
-                            {{ project.ta_time }}
-                    </p>
+                            </a>
+                            &nbsp;
+                            {% endif %}
+                            {% endfor %}
+                            &nbsp;&nbsp;&nbsp;&nbsp;
+                            <strong>Scrum Master</strong>
+                            &nbsp;
+                            <a href="{% url 'profile' project.scrum_master.username %}">
+                                <span class="label label-info">
+                                    {{ project.scrum_master.username }}
+                                </span>
+                            </a>
+                            &nbsp;&nbsp;&nbsp;&nbsp;
+                            <strong>Meeting Location</strong>
+                            &nbsp;
+                            {% if project.ta_location == "" %}
+                                N/A
+                            {% else %}
+                                {{ project.ta_location }}
+                            {% endif %}
+                            &nbsp;&nbsp;&nbsp;&nbsp;
+                            <strong>Meeting Time</strong>
+                            &nbsp;
+                            {% if project.ta_time == "" %}
+                                N/A
+                            {% else%}
+                                {{ project.ta_time }}
+                            {% endif %}
+                        </div>
+                        <!-- /.box-body -->
+                    </div>
                 </div>
             </div>
 
@@ -488,10 +510,13 @@
                                          <th style="width:20%;">Performance Assessment</th>
                                          <th style="width:20%;">Notes</th>
                                        </tr>
+                                       <!--{{ tsrs|pprint }} see output_of_print_tsrs.txt-->
+                                       <br><br>
                                        {% for m in members %}
                                            <tr style="border-top-color: #CCCCCC; border-top-style: solid;">
-                                       {% for compTSR in tsrs %}
-                                       {% for eval in compTSR.1 %}
+                                       {% for completed_tsrs in tsrs %}
+                                       <!--{{ completed_tsrs|pprint }} see output_of_tsr_subcontainer.txt-->
+                                       {% for eval in completed_tsrs.1 %}
                                                 {% if eval.1.evaluatee == m %}
                                                 {% if eval.2 == ass%}
                                                 <td>
@@ -629,7 +654,74 @@
                 color: white;
               }
             </style>
-
+                
+                
+                <!--TEAM HEALTH PANEL: "STOCK TICKER"-->
+                <div class="box box-solid">
+                    <div class="box-header with-border">
+                        <h3 class="box-title">Team Health</h3>
+                        <div class="box-tools">
+                            <button type="button" class="btn btn-box-tool" data-widget="collapse"><i class="fa fa-minus"></i>
+                            </button>
+                    </div>
+                    </div>
+                    <div class="box-body no-padding">
+                        <ul class="nav nav-pills nav-stacked">
+                            <table class="table table-hover">
+                                <tbody>
+                                    <tr>
+                                        <th style="width:3%; text-align:center;">Student</th>
+                                        <th style="width:2%; text-align:center;">Running Average</th>
+                                        <th style="width:1%; text-align:center;">Status</th>
+                                        <th style="width:10%; text-align:center;">Tyler's Stuff</th>
+                                    </tr>
+                                    {% for member in members %}
+                                        <tr>
+                                            <td>
+                                                <a href="{% url 'profile' member.username %}">
+                                                    {{member.profile.name}}</a>
+                                            </td>
+                                            {% for analysis_ass in all_analysis %}
+                                                {% for analysis_piece in analysis_ass.1 %}
+                                                    {% if analysis_piece.0.analysis_type == "Averages for all Evaluations" %}
+                                                    {% if member == analysis_piece.0.associated_member %}
+                                                    {% if analysis_piece.0.tsr_number == assigned_tsrs|length %}
+                                                        <td>
+                                                            {{analysis_piece.0.analysis_output}}
+                                                        </td>
+                                                        {% widthratio 100 members|length 1 as ideal_average_value %}
+                                                        {% widthratio ideal_average_value 4 3 as modified_average_value %}
+                                                        {% if analysis_piece.0.analysis_output >= ideal_average_value %}
+                                                            <td>
+                                                                <div style="color:green">Good</div>
+                                                            </td>
+                                                        {% elif analysis_piece.0.analysis_output >= modified_average_value %}     
+                                                            <td>
+                                                                <div style="color:#ff8040">Warning</div>
+                                                            </td>
+                                                        {% else %}
+                                                            <td>
+                                                                <div style="color:red">Bad</div>
+                                                            </td>
+                                                        {% endif %}
+                                                    {% endif %}
+                                                    {% endif %}
+                                                    {% endif %}
+                                                {% endfor %}
+                                            {% endfor %}
+                           
+                                        </tr>
+                                    {% endfor %}                                              
+                                </tbody>
+                            </table>
+                        </ul>
+                    </div>
+                </div>
+                
+                
+                
+                
+                
                 {% for ass in assigned_tsrs %}
                 <div class="box box-solid">
                   <div class="box-header with-border">
@@ -930,7 +1022,7 @@
     <div class="box-header with-border">
         <h6 class="box-title">Pending Requests to Join: ( {{ pending_count }} )</h6>
         <div class="box-tools">
-            <button type="button" class="btn btn-box-tool" data-widget="collapse"><i class="fa fa-minus"></i></button>
+            <button type="button" class="btn btn-box-tool" data-widget="collapse"><i class="fa fa-plus"></i></button>
         </div>
     </div>
 
@@ -940,14 +1032,14 @@
                 <tbody>
                 <tr>
                   <th>Email Address</th>
-                  <th style="width:50%">Request Date</th>
+                  <!-- <th style="width:50%">Request Date</th> -->
                   <th style="width: 40px"></th>
                   <th style="width: 40px"></th>
                 </tr>
                 {% for stud in pending_members %}
                     <tr>
                         <td> <a href="{% url 'profile' stud.username %}"> {{ stud.email }} </a> </td>
-                        <td> Todo </td>
+                        <!-- <td> Todo </td> -->
                         <td> <a href="{% url 'add_member' project.slug stud.username %}"> <button type="button" class="btn btn-block btn-primary btn-xs">Accept</button> </a></td>
                         <td> <a href="{% url 'reject_member' project.slug stud.username %}"><button type="button" class="btn btn-block btn-danger btn-xs">Reject</button> </td>
                     </tr>
