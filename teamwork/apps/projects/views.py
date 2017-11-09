@@ -210,37 +210,34 @@ def view_one_project(request, slug):
     # TSR's completed. This means the correct amount of Tsr's for the assignment per project exist, with the correct matches to evaluator
     # and evaluatee
     
+    if len(members) > 0:
     #checks the course for each assignment of type tsr and goes through each to get the assignment number and associated analysis
-    for each_assigned_tsr in assigned_tsrs: 
+        for each_assigned_tsr in assigned_tsrs: 
        
-         assigned_tsr_number = each_assigned_tsr.ass_number
-         existing_analysis = project.analysis.filter(tsr_number = assigned_tsr_number)
+            assigned_tsr_number = each_assigned_tsr.ass_number
+            existing_analysis = project.analysis.filter(tsr_number = assigned_tsr_number)
 
-         #check to see if an instance of the analysis for a specific tsr assigned does not exist for the project
-         #if it exists, skip over analysis generation completely, if not go through with next check
-         if not existing_analysis.exists():
-             completed_tsrs_per_ass_number = project.tsr.filter(ass_number = assigned_tsr_number)
-
-             if mem_count == (len(completed_tsrs_per_ass_number)/mem_count):
-                 tsr_exists = {}
+        	#check to see if an instance of the analysis for a specific tsr assigned does not exist for the project
+        	#if it exists, skip over analysis generation completely, if not go through with next check
+            if not existing_analysis.exists():
+            	completed_tsrs_per_ass_number = project.tsr.filter(ass_number = assigned_tsr_number)
+            	if mem_count == (len(completed_tsrs_per_ass_number)/len(members)):
+                	tsr_exists = {}
                  
-                 for each_member in members :
-                     tsr_per_evaluator = completed_tsrs_per_ass_number.filter(evaluator = each_member)
-                     
-                     for each_evaluatee in members:
-                         tsr_exists[str(each_member), str(each_evaluatee)] = tsr_per_evaluator.filter(evaluatee = each_evaluatee).exists()
+                	for each_member in members :
+                		tsr_per_evaluator = completed_tsrs_per_ass_number.filter(evaluator = each_member)
+                		for each_evaluatee in members:
+                			tsr_exists[str(each_member), str(each_evaluatee)] = tsr_per_evaluator.filter(evaluatee = each_evaluatee).exists()
 
-                 num_distinct_tsrs = sum(tsr_exists.values())
-                 if  len(completed_tsrs_per_ass_number) == num_distinct_tsrs :
-                    #Put functions here
-                    similarity_for_given_evals(project, assigned_tsr_number)
-                    giving_outlier_scores(project, assigned_tsr_number)
-                    tsr_word_count(project, assigned_tsr_number)
-                    similarity_of_eval_history(project, assigned_tsr_number)
-                    averages_for_all_evals(project, assigned_tsr_number)
-
-                 else:
-                     messages.warning(request, 'TSR' + str(assigned_tsr_number) + 'is not complete. All TSRs must be complete to generate analysis!')
+                	num_distinct_tsrs = sum(tsr_exists.values())
+                	if len(completed_tsrs_per_ass_number) == num_distinct_tsrs:
+                		similarity_for_given_evals(project, assigned_tsr_number)
+                		giving_outlier_scores(project, assigned_tsr_number)
+                		tsr_word_count(project, assigned_tsr_number)
+                		similarity_of_eval_history(project, assigned_tsr_number)
+                		averages_for_all_evals(project, assigned_tsr_number)
+                	else:
+                		messages.warning(request, 'TSR' + str(assigned_tsr_number) + 'is not complete. All TSRs must be complete to generate analysis!')
 
      #historical functions go here
     analysis_dicts={}
