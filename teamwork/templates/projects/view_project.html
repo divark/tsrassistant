@@ -953,34 +953,26 @@
                 
                 
                 
-              <!--CURRENTLY HARDCODE PROTOTYPE: NOT FUNCTIONAL-->
+             <!--CURRENTLY HARDCODE PROTOTYPE: NOT FUNCTIONAL-->
                 <form action = "">
-                	 <h3 style=" position:relative; left:340px; top:35px;">TSR Number</h3>
-              	    <select  style=" position:relative; left:485px;" name="TSR #">
-                    	<option value="1">1</option>
- 				   		<option value="2">2</option>
-  						<option value="3">3</option>
-  						<option value="4">4</option>
-					</select>
-				</form>
-				<br><br>
-                <svg width="1000" height="375">
-                	<text x="40" y="15" fill="Black">Graph 1</text>
-                    <rect x="40" y="20" width="350" height="350" rx="20" ry="20" style = "fill:white;stroke:black;stroke-width:1" />
+                    <h5 style="position: relative; left:40px; top: 100px">TSR Number:</h5>
+                    <select  style=" position:relative; left:150px; top: 60px" name="TSR #">
+                        <!-- goes through each of the tsrs and print the tsr number-->
+                        {% for each in assigned_tsrs %}
+                            <option value="each">{{each.ass_number}}</option>
+                        {% endfor %}
 
- 					<text x="450" y="15" fill="Black">Graph 2</text>
-                    <rect x="450" y="20" width="500" height="325" style = "fill:white;stroke:black;stroke-width:1" />
-                </svg>
-
-                <form action = "">
-                	<h5 style=" position:relative; left:450px; top:35px">Member:</h5>
-              	    <select  style=" position:relative; left:525px; " name="Member">
-                    	<option value="joe">Joe</option>
- 				   		<option value="dick">Richard</option>
-  						<option value="corn">Cornilius</option>
-  						<option value="audi">Audi</option>
-					</select>
-				</form>
+                    </select>
+                    <form action = "">
+                        <h5 style=" position:relative; left:450px; top:35px">Member:</h5>
+                        <select  style=" position:relative; left:525px; " name="Member">
+                            <!-- goes through the members in the group and prints their name -->
+                            {% for each in members %} 
+                                <option value="each">{{each}}</option>
+                            {% endfor %}
+                        </select>
+                    </form>
+                </form>
                 
                 
                 <div class="box box-solid">
