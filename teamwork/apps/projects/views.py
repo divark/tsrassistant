@@ -210,10 +210,24 @@ def view_one_project(request, slug):
     # TSR's completed. This means the correct amount of Tsr's for the assignment per project exist, with the correct matches to evaluator
     # and evaluatee
     
+<<<<<<< HEAD
     if len(members) > 0:
+=======
+    # Constants defined for weighing Analysis objects. Used for Team Health overall.
+    # Numbers used inspired by Fibonacci Sequence.
+    local_similarity_weight = 1
+    outlier_weight = 5
+    wordcount_weight = 1
+    historical_similarity_weight = 2
+    averages_weight = 5
+
+    health_report_total = 0
+    health_ideal = (outlier_weight ^ 2) + wordcount_weight * len(members)
+>>>>>>> 0f155b7665706219f1b788e797c7e1afb7217f0d
     #checks the course for each assignment of type tsr and goes through each to get the assignment number and associated analysis
         for each_assigned_tsr in assigned_tsrs: 
        
+<<<<<<< HEAD
             assigned_tsr_number = each_assigned_tsr.ass_number
             existing_analysis = project.analysis.filter(tsr_number = assigned_tsr_number)
 
@@ -223,6 +237,18 @@ def view_one_project(request, slug):
             	completed_tsrs_per_ass_number = project.tsr.filter(ass_number = assigned_tsr_number)
             	if mem_count == (len(completed_tsrs_per_ass_number)/len(members)):
                 	tsr_exists = {}
+=======
+         assigned_tsr_number = each_assigned_tsr.ass_number
+         existing_analysis = project.analysis.filter(tsr_number = assigned_tsr_number)
+
+         #check to see if an instance of the analysis for a specific tsr assigned does not exist for the project
+         #if it exists, skip over analysis generation completely, if not go through with next check
+         if not existing_analysis.exists():
+             completed_tsrs_per_ass_number = project.tsr.filter(ass_number = assigned_tsr_number)
+             #TODO: check if completed_tsrs_per_ass_number exists / is not empty (NoneType)
+             if mem_count == (len(completed_tsrs_per_ass_number)/mem_count):
+                 tsr_exists = {}
+>>>>>>> 0f155b7665706219f1b788e797c7e1afb7217f0d
                  
                 	for each_member in members :
                 		tsr_per_evaluator = completed_tsrs_per_ass_number.filter(evaluator = each_member)
@@ -243,7 +269,19 @@ def view_one_project(request, slug):
     analysis_dicts={}
 
     for analysis_object in project.analysis.all():
-            analysis_dicts.setdefault(analysis_object.analysis_type, []).append([analysis_object])            
+            analysis_dicts.setdefault(analysis_object.analysis_type, []).append([analysis_object])
+            if analysis_object.flag_tripped:
+                if analysis_object.analysis_type == "Historically Similar Scores":
+                    health_report_total += historical_similarity_weight
+                elif analysis_object.analysis_type == "Outlier Scores":
+                    health_report_total += outlier_weight
+                elif analysis_object.analysis_type == "Word Count":
+                    health_report_total += wordcount_weight
+                elif analysis_object.analysis_type == "Similarity for Given Evaluations":
+                    health_report_total += local_similarity_weight
+                elif analysis_object.analysis_type == "Averages for all Evaluations":
+                    health_report_total += averages_weight
+
 
     analysis_items = analysis_dicts.items()
 
@@ -254,7 +292,8 @@ def view_one_project(request, slug):
         'pending_count':pending_count,'profile' : profile, 'scrum_master': scrum_master, 'staff':staff,
         'updates': updates, 'project_chat': project_chat, 'course' : course, 'project_owner' : project_owner,
         'meetings': readable, 'resources': resources, 'json_events': project.meetings, 'tsrs' : tsr_items, 'tsr_keys': tsr_keys, 
-        'contribute_levels' : mid, 'assigned_tsrs': assigned_tsrs, 'all_analysis' : analysis_items})
+        'contribute_levels' : mid, 'assigned_tsrs': assigned_tsrs, 'all_analysis' : analysis_items, 'health_report': health_report_total,
+        'health_ideal':health_ideal})
 
 def leave_project(request, slug):
     project = get_object_or_404(Project, slug=slug)
