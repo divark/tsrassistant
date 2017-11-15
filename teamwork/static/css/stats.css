@@ -28,6 +28,7 @@ statistics
 /* your colors */
 .legend .in { background-color: #1789D4; }
 .legend .out { background-color: #CB4B16; }
+.legend .names{ background-color:  }
 .legend .count { float: right; margin-right: 20px; }
 
 .ScrollStyle

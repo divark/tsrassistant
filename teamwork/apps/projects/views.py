@@ -210,62 +210,58 @@ def view_one_project(request, slug):
     # TSR's completed. This means the correct amount of Tsr's for the assignment per project exist, with the correct matches to evaluator
     # and evaluatee
     
-<<<<<<< HEAD
+#<<<<<<< HEAD
     if len(members) > 0:
-=======
+#=======
     # Constants defined for weighing Analysis objects. Used for Team Health overall.
     # Numbers used inspired by Fibonacci Sequence.
-    local_similarity_weight = 1
-    outlier_weight = 5
-    wordcount_weight = 1
-    historical_similarity_weight = 2
-    averages_weight = 5
+        local_similarity_weight = 1
+        outlier_weight = 5
+        wordcount_weight = 1
+        historical_similarity_weight = 2
+        averages_weight = 5
 
-    health_report_total = 0
-    health_ideal = (outlier_weight ^ 2) + wordcount_weight * len(members)
->>>>>>> 0f155b7665706219f1b788e797c7e1afb7217f0d
+        health_report_total = 0
+        health_ideal = (outlier_weight ^ 2) + wordcount_weight * len(members)
     #checks the course for each assignment of type tsr and goes through each to get the assignment number and associated analysis
         for each_assigned_tsr in assigned_tsrs: 
        
-<<<<<<< HEAD
             assigned_tsr_number = each_assigned_tsr.ass_number
             existing_analysis = project.analysis.filter(tsr_number = assigned_tsr_number)
 
         	#check to see if an instance of the analysis for a specific tsr assigned does not exist for the project
         	#if it exists, skip over analysis generation completely, if not go through with next check
             if not existing_analysis.exists():
-            	completed_tsrs_per_ass_number = project.tsr.filter(ass_number = assigned_tsr_number)
-            	if mem_count == (len(completed_tsrs_per_ass_number)/len(members)):
-                	tsr_exists = {}
-=======
-         assigned_tsr_number = each_assigned_tsr.ass_number
-         existing_analysis = project.analysis.filter(tsr_number = assigned_tsr_number)
+                completed_tsrs_per_ass_number = project.tsr.filter(ass_number = assigned_tsr_number)
+                if len(members) == (len(completed_tsrs_per_ass_number)/len(members)):
+                    tsr_exists = {}
+        assigned_tsr_number = each_assigned_tsr.ass_number
+        existing_analysis = project.analysis.filter(tsr_number = assigned_tsr_number)
 
          #check to see if an instance of the analysis for a specific tsr assigned does not exist for the project
          #if it exists, skip over analysis generation completely, if not go through with next check
-         if not existing_analysis.exists():
-             completed_tsrs_per_ass_number = project.tsr.filter(ass_number = assigned_tsr_number)
-             #TODO: check if completed_tsrs_per_ass_number exists / is not empty (NoneType)
-             if mem_count == (len(completed_tsrs_per_ass_number)/mem_count):
-                 tsr_exists = {}
->>>>>>> 0f155b7665706219f1b788e797c7e1afb7217f0d
+        if not existing_analysis.exists():
+            completed_tsrs_per_ass_number = project.tsr.filter(ass_number = assigned_tsr_number)
+            #TODO: check if completed_tsrs_per_ass_number exists / is not empty (NoneType)
+            if len(members) == (len(completed_tsrs_per_ass_number)/len(members)):
+                tsr_exists = {}
                  
-                	for each_member in members :
-                		tsr_per_evaluator = completed_tsrs_per_ass_number.filter(evaluator = each_member)
-                		for each_evaluatee in members:
-                			tsr_exists[str(each_member), str(each_evaluatee)] = tsr_per_evaluator.filter(evaluatee = each_evaluatee).exists()
+                for each_member in members :
+                    tsr_per_evaluator = completed_tsrs_per_ass_number.filter(evaluator = each_member)
+                    for each_evaluatee in members:
+                        tsr_exists[str(each_member), str(each_evaluatee)] = tsr_per_evaluator.filter(evaluatee = each_evaluatee).exists()
 
-                	num_distinct_tsrs = sum(tsr_exists.values())
-                	if len(completed_tsrs_per_ass_number) == num_distinct_tsrs:
-                		similarity_for_given_evals(project, assigned_tsr_number)
-                		giving_outlier_scores(project, assigned_tsr_number)
-                		tsr_word_count(project, assigned_tsr_number)
-                		similarity_of_eval_history(project, assigned_tsr_number)
-                		averages_for_all_evals(project, assigned_tsr_number)
-                	else:
-                		messages.warning(request, 'TSR' + str(assigned_tsr_number) + 'is not complete. All TSRs must be complete to generate analysis!')
+                num_distinct_tsrs = sum(tsr_exists.values())
+                if len(completed_tsrs_per_ass_number) == num_distinct_tsrs:
+                    similarity_for_given_evals(project, assigned_tsr_number)
+                    giving_outlier_scores(project, assigned_tsr_number)
+                    tsr_word_count(project, assigned_tsr_number)
+                    similarity_of_eval_history(project, assigned_tsr_number)
+                    averages_for_all_evals(project, assigned_tsr_number)
+                else:
+                    messages.warning(request, 'TSR' + str(assigned_tsr_number) + 'is not complete. All TSRs must be complete to generate analysis!')
 
-     #historical functions go here
+    #historical functions go here
     analysis_dicts={}
 
     for analysis_object in project.analysis.all():
@@ -282,8 +278,22 @@ def view_one_project(request, slug):
                 elif analysis_object.analysis_type == "Averages for all Evaluations":
                     health_report_total += averages_weight
 
-
     analysis_items = analysis_dicts.items()
+
+
+# just ducky
+    name_length = []
+#    indicator = 0
+    for each in members:
+        name_length.append((len(each.profile.name), each.profile.name))
+#        indicator +=1
+
+    num_in = 10
+    num_out = 4
+
+# end of ducky
+
+# project_members is defined as the same thing as members ...???
 
     return render(request, 'projects/view_project.html', {'page_name': page_name,
         'page_description': page_description, 'title' : title, 'members' : members, 'form' : form,
@@ -293,7 +303,7 @@ def view_one_project(request, slug):
         'updates': updates, 'project_chat': project_chat, 'course' : course, 'project_owner' : project_owner,
         'meetings': readable, 'resources': resources, 'json_events': project.meetings, 'tsrs' : tsr_items, 'tsr_keys': tsr_keys, 
         'contribute_levels' : mid, 'assigned_tsrs': assigned_tsrs, 'all_analysis' : analysis_items, 'health_report': health_report_total,
-        'health_ideal':health_ideal})
+        'health_ideal':health_ideal, 'name_length':name_length})
 
 def leave_project(request, slug):
     project = get_object_or_404(Project, slug=slug)
