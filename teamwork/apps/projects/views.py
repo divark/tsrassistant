@@ -282,14 +282,15 @@ def view_one_project(request, slug):
 
 
 # just ducky
-    name_length = []
-#    indicator = 0
-    for each in members:
-        name_length.append((len(each.profile.name), each.profile.name))
-#        indicator +=1
 
-    num_in = 10
-    num_out = 4
+    member_names = []
+    #When I looked up escape characters, \U is for characters with 32bit hex values
+    colors = ["#FFB2B2", "#B2B2FF", "#B2D8B2", "#D8B2D8", "#FFE4B2", "#800000","##9DEAE7", "#549ED6"]
+    #colors = ["red", "yellow", "blue", "green", "orange", "purple"]
+    itor = 0
+    for each in members:
+        member_names.append((each.profile.name, len(each.profile.name), colors[itor]))
+        itor +=1
 
 # end of ducky
 
@@ -303,7 +304,7 @@ def view_one_project(request, slug):
         'updates': updates, 'project_chat': project_chat, 'course' : course, 'project_owner' : project_owner,
         'meetings': readable, 'resources': resources, 'json_events': project.meetings, 'tsrs' : tsr_items, 'tsr_keys': tsr_keys, 
         'contribute_levels' : mid, 'assigned_tsrs': assigned_tsrs, 'all_analysis' : analysis_items, 'health_report': health_report_total,
-        'health_ideal':health_ideal, 'name_length':name_length})
+        'health_ideal':health_ideal, 'member_names':member_names, 'colors':colors})
 
 def leave_project(request, slug):
     project = get_object_or_404(Project, slug=slug)

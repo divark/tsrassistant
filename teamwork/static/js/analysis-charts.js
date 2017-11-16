@@ -3,45 +3,36 @@
 // ======================================================
 
 //var total_students = document.getElementById("total_students").value;
-//var total_projects = document.getElementById("total_projects").value;
-//var students_not = document.getElementById("students_not").value;
-//var students_projects = document.getElementById("students_projects").value;
 
+//variable theMemberNames that gets element names
+//that is a list of tuples (name, len(name), ...)
+var theMemberNames = document.getElementById("names");
 
-//var studs_in_pro = (students_projects/total_students);
-//var studs_not_in_pro = (students_not/total_students);
+var colors = document.getElementById("colors")
+	// #FFB2B2 - pink
+	// #B2B2FF - light blue
+	// #B2D8B2 - light green
+	// #D8B2D8 - light purple
+	// #FFE4B2 - light orange
+	// #800000 - maroonish
+	// #9DEAE7 - tealish
+	// #549ED6 - darkish blue
+	//var colors = ["#FFB2B2", "#B2B2FF", "#B2D8B2", "#D8B2D8", "#FFE4B2", "#800000","##9DEAE7", "#549ED6"];
 
-//var names = document.getElementById("{{name}}").value;
-var lengths = document.getElementById("11").value;
-var dict = document.getElementById("all_members").value;
-
-console.log(dict);
+console.log(theMemberNames);
 
 // analysis chart options
 
 var analysisOptions = {
 
-    scaleFontColor: "#fff",
+    scaleFontColor: "#00000",
 
     onAnimationComplete: true
 
 }
 
-//console.log(names);
-//console.log(lengths);
-
-
 /*
 var doughnutOptions = {
-
-	//Boolean - Whether we should show a stroke on each segment
-	segmentShowStroke : true,
-
-	//String - The colour of each segment stroke
-	segmentStrokeColor : "#fff",
-
-	//Number - The width of each segment stroke
-	segmentStrokeWidth : 2,
 
 	//The percentage of the chart that we cut out of the middle.
 	percentageInnerCutout : 25,
@@ -58,8 +49,6 @@ var doughnutOptions = {
 	//Boolean - Whether we animate the rotation of the Doughnut
 	animateRotate : true,
 
-	//Boolean - Whether we animate scaling the Doughnut from the centre
-	animateScale : true
 };*/
 
 
@@ -71,19 +60,24 @@ var doughnutOptions = {
 
 
 // analysis chart data
-var analysisData = [
-/*	{
-		label : 'names',
-		value : stud_in_pro,
-		color : "#1789D4"
-	},
-*/
-	{
-		label : 'lengths',
-		value : lengths,
-		color : "#6666"
 
-	},
+var analysisData = [];
+
+for (var i = 0; i < theMemberNames.length; i++) {
+//loop through the members and append a dictionary to the array
+//theMembers[i] should be the tuple
+//the 0th element should be the name, and the 1st should be len(name)
+
+	analysisData.append({
+
+	label : theMemberNames[i].0,
+	value : theMemberNames[i].1,
+	color : colors[i]
+		
+	});
+
+}
+
 /*
     {
         label : 'IN',
@@ -95,13 +89,13 @@ var analysisData = [
 		value : studs_not_in_pro,
 		color : "#CB4B16"
 	}*/
-];
+
 
 console.log(analysisData);
 
 
 //Get the context of the Doughnut Chart canvas element we want to select
-var ctx = document.getElementById("doughnutChart").getContext("2d");
+var ctx = document.getElementById("barChart").getContext("2d");
 
 // Create the Doughnut Chart
-var theAnalysisChart = new Chart(ctx).Doughnut(analysisData, analysisOptions);
+var theAnalysisChart = new Chart(ctx).Bar(analysisData, analysisOptions);
