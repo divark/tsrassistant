@@ -6,9 +6,15 @@
 
 //variable theMemberNames that gets element names
 //that is a list of tuples (name, len(name), ...)
-var theMemberNames = document.getElementById("names");
+var theMemberNames = document.getElementById("names").value;
+// var mem_percentages = document.getElementById("mem_percentages");
+var chosen_tsr = document.getElementById("chosen_tsr").value;
 
-var colors = document.getElementById("colors")
+console.log(theMemberNames);
+console.log(mem_percentages);
+console.log(chose_tsr);
+
+var colors = document.getElementById("colors").value;
 	// #FFB2B2 - pink
 	// #B2B2FF - light blue
 	// #B2D8B2 - light green
@@ -19,45 +25,24 @@ var colors = document.getElementById("colors")
 	// #549ED6 - darkish blue
 	//var colors = ["#FFB2B2", "#B2B2FF", "#B2D8B2", "#D8B2D8", "#FFE4B2", "#800000","##9DEAE7", "#549ED6"];
 
-console.log(theMemberNames);
-
 // analysis chart options
 
 var analysisOptions = {
 
-    scaleFontColor: "#00000",
-
-    onAnimationComplete: true
+    scaleFontColor: "#FFB2B2",
+    scaleFontFamily: "'Arial'",
+    scaleFontSize: 12,
+    scaleFontStyle: "normal",
+    scaleGridLineWidth: 1,
+    barShowStroke: !0,
+    barStrokeWidth: 2,
+    barValueSpacing: 5,
+    barDatasetSpacing: 1,
+    animation: !0,
+    animationSteps: 60,
+    animationEasing: "easeOutQuart",
 
 }
-
-/*
-var doughnutOptions = {
-
-	//The percentage of the chart that we cut out of the middle.
-	percentageInnerCutout : 25,
-
-	//Boolean - Whether we should animate the chart
-	animation : true,
-
-	//Number - Amount of animation steps
-	animationSteps : 100,
-
-	//String - Animation easing effect
-	animationEasing : "easeOutBounce",
-
-	//Boolean - Whether we animate the rotation of the Doughnut
-	animateRotate : true,
-
-};*/
-
-
-//console.log(total_students);
-//console.log(total_projects);
-//console.log(students_not);
-//console.log(students_projects);
-
-
 
 // analysis chart data
 

@@ -284,14 +284,19 @@ def view_one_project(request, slug):
 # just ducky
 
     member_names = []
-    #When I looked up escape characters, \U is for characters with 32bit hex values
     colors = ["#FFB2B2", "#B2B2FF", "#B2D8B2", "#D8B2D8", "#FFE4B2", "#800000","##9DEAE7", "#549ED6"]
-    #colors = ["red", "yellow", "blue", "green", "orange", "purple"]
     itor = 0
     for each in members:
         member_names.append((each.profile.name, len(each.profile.name), colors[itor]))
         itor +=1
+# member_names (name, len(name), color = order of name)
 
+# make a list with dictionaries with tuples. [(name:(percent given by others, color)]
+    # mem_percentages = []
+    # itor = 0
+    # for each in members:
+    #     mem_percentages.append({each.profile.name: (0.1 colors[itor]) })
+    #     itor +=1
 # end of ducky
 
 # project_members is defined as the same thing as members ...???
