@@ -437,6 +437,13 @@ class TSR(forms.ModelForm):
         model = Project
         fields = ['perc_contribution', 'pos_fb', 'neg_fb']
 
+"""
+class FlagSuppressionForm(forms.ModelForm):
+    class Meta:
+        model = Analysis
+        fields = ['flag_suppressed']
+"""
+
 def validate_url(url):
     url_form_field = URLField()
     try:

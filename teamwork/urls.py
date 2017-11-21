@@ -154,3 +154,8 @@ urlpatterns = [
         url(r'^alerts/readall/$', profile_views.archive_alerts, name="archive_alerts"),
 
         ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+
+        #FLAG STUFF
+        # url(r'^project/(?P<slug>[^/]+)/suppress_flags/$', project_views.mark_Suppressed, name='mark_Suppressed'),
+        # url(r'^project/(?P<slug>[^/]+)/reset_flags/$', project_views.reset_Flags, name='reset_Flags'),
