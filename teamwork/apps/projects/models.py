@@ -120,8 +120,6 @@ class Analysis(models.Model):
     def __str__(self):
         return "%d, %s, %s, %s, %s,%s,%s" % (self.tsr_number, self.associated_member,
                                        self.analysis_type, self.analysis_output, self.flag_detail, self.flag_suppressed)
-
-
     def get_flag(self):
         return self.flag_detail
 
