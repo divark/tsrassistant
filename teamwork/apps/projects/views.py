@@ -7,6 +7,8 @@ from django.http import (HttpResponse, HttpResponseBadRequest,
 from django.shortcuts import get_object_or_404, redirect, render
 from django.http import JsonResponse
 from django.db.models import Q
+from django.db.models import Max
+from django.db.models import Count
 from django.contrib.auth.models import User
 from django.urls import reverse
 
@@ -131,6 +133,7 @@ def view_one_project(request, slug):
     pending_count = len(pending_members)
     project_members = project.members.all()
 
+
     isProf = 0
     if request.user.profile.isProf:
         isProf = 1
@@ -138,6 +141,21 @@ def view_one_project(request, slug):
     requestButton = 1
     if request.user in pending_members:
         requestButton = 0
+
+
+
+    if request.method == 'POST':
+        tsr_num = request.POST.get('tsr_number_input',None)
+        suppress_list = 'mark_suppressed_'+ str(tsr_num)
+        if 'mark_suppressed_confirmed' in request.POST:
+            mark_Suppressed(request,project, request.POST.getlist(suppress_list))
+            return redirect(view_one_project, project.slug)
+      
+        elif 'unsuppress_flags' in request.POST:
+            unsuppress_Tsr_Flags(request,project)
+            return redirect(view_one_project, project.slug)
+       
+
 
     project_chat = reversed(project.get_chat())
     if request.method == 'POST':
@@ -210,6 +228,17 @@ def view_one_project(request, slug):
     # TSR's completed. This means the correct amount of Tsr's for the assignment per project exist, with the correct matches to evaluator
     # and evaluatee
     
+    # Constants defined for weighing Analysis objects. Used for Team Health overall.  
+    team_health_green = 0
+    team_health_warning = 1
+    team_health_red_flag = 2
+    low_bound,warn_low_bound,warn_high_bound,high_bound = ideal_score_ranges_modified(project)
+    #Return a  coded health flag focused on team health statu
+    health_flag = 0
+
+    #counter variables for the number specific flag types
+    num_warn_flags = 0
+    num_red_flags = 0
     #checks the course for each assignment of type tsr and goes through each to get the assignment number and associated analysis
     for each_assigned_tsr in assigned_tsrs: 
        
@@ -220,7 +249,7 @@ def view_one_project(request, slug):
          #if it exists, skip over analysis generation completely, if not go through with next check
          if not existing_analysis.exists():
              completed_tsrs_per_ass_number = project.tsr.filter(ass_number = assigned_tsr_number)
-
+             #TODO: check if completed_tsrs_per_ass_number exists / is not empty (NoneType)
              if mem_count == (len(completed_tsrs_per_ass_number)/mem_count):
                  tsr_exists = {}
                  
@@ -242,14 +271,63 @@ def view_one_project(request, slug):
                  else:
                      messages.warning(request, 'TSR' + str(assigned_tsr_number) + 'is not complete. All TSRs must be complete to generate analysis!')
 
-#historical functions go here
+
     analysis_dicts={}
 
+    #TEAM HEALTH THRESHOLD CALCULATIONS
+    
+    #For numerical analysis team health, most important aspect is avg scores per person
+    previous_tsr = 0
+    most_recent_tsr_completed = project.analysis.all().aggregate(Max('tsr_number'))
+    most_recent_tsr_completed_num = most_recent_tsr_completed.get('tsr_number__max')
+    distinct_tsr_num = project.analysis.all().values('tsr_number').distinct()
+
+    comp_tsr_number_list = []
+ 
+    for each_num_obj in distinct_tsr_num:
+        
+        each_num = each_num_obj.get('tsr_number')
+        comp_tsr_number_list.append(each_num)
+
+        if each_num >previous_tsr and each_num < most_recent_tsr_completed_num:
+            previous_tsr = each_num
+
+    avg_score_dict_pre_cur = {}
     for analysis_object in project.analysis.all():
-            analysis_dicts.setdefault(analysis_object.analysis_type, []).append([analysis_object])            
+        analysis_dicts.setdefault(analysis_object.analysis_type, []).append([analysis_object])
+        if (analysis_object.flag_suppressed == False) and (analysis_object.tsr_number == most_recent_tsr_completed_num
+        or  (previous_tsr > 0 and analysis_object.tsr_number == previous_tsr )):
+            if analysis_object.analysis_type == "Averages for all Evaluations":
+                if not analysis_object.associated_member in avg_score_dict_pre_cur :
+                    avg_score_dict_pre_cur[analysis_object.associated_member] = float(analysis_object.analysis_output)
+                else:
+                    avg_score_dict_pre_cur[analysis_object.associated_member].append(float(analysis_object.analysis_output))
+
+    for key,val in avg_score_dict_pre_cur.items():
+        if isinstance(val, tuple) :
+            val_len = len(val)
+            for x in range(val_len):
+                if val[x] <= low_bound:
+                    num_red_flags += 1
+                elif val[x] <= warn_low_bound:
+                    num_warn_flags += 1
+
+            if num_warn_flags >= 2:
+                num_red_flags += 1
+        else:
+            if val <= low_bound:
+                num_red_flags += 1
+            elif val <= warn_low_bound:
+                num_warn_flags += 1
+    
+    if num_red_flags > 0 :
+        health_flag = team_health_red_flag  
+    elif num_warn_flags > 0: 
+        health_flag = team_health_warning
+        
 
     analysis_items = analysis_dicts.items()
-
+    
     return render(request, 'projects/view_project.html', {'page_name': page_name,
         'page_description': page_description, 'title' : title, 'members' : members, 'form' : form,
         'project': project, 'project_members':project_members, 'pending_members': pending_members, 'mem_count':mem_count,
@@ -257,7 +335,9 @@ def view_one_project(request, slug):
         'pending_count':pending_count,'profile' : profile, 'scrum_master': scrum_master, 'staff':staff,
         'updates': updates, 'project_chat': project_chat, 'course' : course, 'project_owner' : project_owner,
         'meetings': readable, 'resources': resources, 'json_events': project.meetings, 'tsrs' : tsr_items, 'tsr_keys': tsr_keys, 
-        'contribute_levels' : mid, 'assigned_tsrs': assigned_tsrs, 'all_analysis' : analysis_items})
+        'contribute_levels' : mid, 'assigned_tsrs': assigned_tsrs, 'all_analysis' : analysis_items, 
+        'health_flag': health_flag, 'team_health_green':team_health_green , 'team_health_warning':team_health_warning,
+         'team_health_red_flag':team_health_red_flag , 'comp_tsr_number_list' : comp_tsr_number_list})
 
 def leave_project(request, slug):
     project = get_object_or_404(Project, slug=slug)
@@ -1241,16 +1321,16 @@ def similarity_of_eval_history(project, asgn_number):
     for member in historic_similarities:
         hist_similar_count = 0
         #preconditions:(project , ([int]tsr_number, [User]associated_member , [string]analysis_type, [string]analysis_output))
-        analysis_data = (asgn_number, member, "Historically Similar Scores", historic_similarities[member])
-        analysis_object = setAnalysisData(project, analysis_data)
         
         for evaluatee in historic_similarities[member]:
             if historic_similarities[member][evaluatee] == True:
                 hist_similar_count += 1
 
-        #preconditions:( AnalysisObject, ([boolean] flag_tripped, [String]flag_detail))
+        #preconditions:( AnalysisObject, [String]flag_detail)
         if hist_similar_count > 0:
-            setFlag(analysis_object, (True, "%s has given %d sets of similar scores over time." % (member, hist_similar_count)))
+            analysis_data = (asgn_number, member, "Historically Similar Scores", historic_similarities[member])
+            analysis_object = setAnalysisData(project, analysis_data)
+            setFlag(analysis_object, "%s has given %d sets of similar scores over time." % (member, hist_similar_count))
     return historic_similarities
     
 def giving_outlier_scores(project, asgn_number):
@@ -1276,27 +1356,57 @@ def giving_outlier_scores(project, asgn_number):
         low_count = 0
         high_count = 0
         #preconditions:(project , ([int]tsr_number, [User]associated_member , [string]analysis_type, [string]analysis_output))
-        analysis_data = (asgn_number, member, "Outlier Scores", outlier_scores[member])
-        analysis_object = setAnalysisData(project, analysis_data)
         
         for evaluatee in outlier_scores[member]:
             if outlier_scores[member][evaluatee] == 'Low':
                 low_count += 1
             elif outlier_scores[member][evaluatee] == 'High':
                 high_count += 1
-        #preconditions:( AnalysisObject, ([boolean] flag_tripped, [String]flag_detail))
+        #preconditions:( AnalysisObject, [String]flag_detail)
         if high_count > 0 or low_count > 0:
-            setFlag(analysis_object, (True, "%s has given %d very low scores and %d very high scores." % (member, low_count, high_count)))
+            analysis_data = (asgn_number, member, "Outlier Scores", outlier_scores[member])
+            analysis_object = setAnalysisData(project, analysis_data)
+            setFlag(analysis_object, "%s has given %d very low scores and %d very high scores." % (member, low_count, high_count))
        
     return outlier_scores
     
+
 def ideal_score_ranges(project):
+    #MODIFY TO TAKE COURSE SCORES,. Will be something along the lines of the following
+    #course = project.course.first()
+    #tsr_threshold_per = course.tsr_thresh
+    #outlier percentage would then be calculated accordingly
     members = project.members.all()
     ideal_average = math.floor(100/len(members))
     outlier_percentage = decimal.Decimal(0.5)
     low_bound = math.floor(ideal_average - (ideal_average * outlier_percentage))
+    print(low_bound)
     high_bound = math.ceil(ideal_average + (ideal_average * outlier_percentage))
+    print(high_bound)
     return (low_bound, high_bound)
+
+def ideal_score_ranges_modified(project):
+    #MODIFY TO TAKE COURSE SCORES,. Will be something along the lines of the following
+    #course = project.course.first()
+    #tsr_threshold_per = course.tsr_thresh
+    #outlier percentage would then be calculated accordingly
+    tsr_threshold_per = 0.80
+    tsr_thresh_diff_low = 1 - tsr_threshold_per
+    tsr_thresh_diff_mid = (tsr_thresh_diff_low)/2
+
+    members = project.members.all()
+    ideal_average = math.floor(100/len(members))
+
+    outlier_percentage = decimal.Decimal(tsr_thresh_diff_low)
+    warning_percentage = decimal.Decimal(tsr_thresh_diff_mid)
+
+    low_bound = math.floor(ideal_average - (ideal_average * outlier_percentage))
+    warn_low_bound = math.floor(ideal_average - (ideal_average * warning_percentage))
+
+    warn_up_bound = math.floor(ideal_average - (ideal_average * warning_percentage))
+    up_bound = math.ceil(ideal_average + (ideal_average * outlier_percentage))
+
+    return (low_bound,warn_low_bound, warn_up_bound, up_bound)
 
 def tsr_word_count(project, asgn_number):
     """
@@ -1324,8 +1434,6 @@ def tsr_word_count(project, asgn_number):
 		                    
     for member in word_counts:
         #preconditions:(project , ([int]tsr_number, [User]associated_member , [string]analysis_type, [string]analysis_output))
-        analysis_data = (asgn_number, member, "Word Count", word_counts[member])
-        analysis_object = setAnalysisData(project, analysis_data)
         sparse_count = 0
         verbose_count = 0
         
@@ -1343,7 +1451,9 @@ def tsr_word_count(project, asgn_number):
                 verbose_count += 1
                 
         if sparse_count > 0 or verbose_count > 0:
-            setFlag(analysis_object, (True, "%s has given %d sparse responses and %d verbose responses." % (member, sparse_count, verbose_count)))
+            analysis_data = (asgn_number, member, "Word Count", word_counts[member])
+            analysis_object = setAnalysisData(project, analysis_data)
+            setFlag(analysis_object, "%s has given %d sparse responses and %d verbose responses." % (member, sparse_count, verbose_count))
 		
     return word_counts
 
@@ -1384,12 +1494,12 @@ def similarity_for_given_evals(project, asgn_number):
         all_similarities[current_evaluator] = evaluator_similarities
 
     for member in all_similarities:
-        analysis_data = (asgn_number, member, "Similarity for Given Evaluations",
-                         all_similarities[member])
-        analysis_flags = (has_atleast_one_identical(member, all_similarities),
-                          "%s has been giving very similar scores to other team members." % member)
-        analysis_object = setAnalysisData(project, analysis_data)
-        setFlag(analysis_object, analysis_flags)
+        if has_atleast_one_identical(member, all_similarities):
+            analysis_data = (asgn_number, member, "Similarity for Given Evaluations",
+                             all_similarities[member])
+            analysis_flags = "%s has been giving very similar scores to other team members." % member
+            analysis_object = setAnalysisData(project, analysis_data)
+            setFlag(analysis_object, analysis_flags)
     return all_similarities
 
 def averages_for_all_evals(project, asgn_number):
@@ -1411,18 +1521,19 @@ def averages_for_all_evals(project, asgn_number):
              
         bounds = ideal_score_ranges(project)
         member_averages[current_evaluatee] = round(average_contribution / num_evals_considered, 1)
-        analysis_data = (asgn_number, current_evaluatee, "Averages for all Evaluations",
-                         member_averages[current_evaluatee])
-        analysis_object = setAnalysisData(project, analysis_data)
         # bounds[1] is the high bound.
         if member_averages[current_evaluatee] >= bounds[1]:
-            analysis_flag = (True,
-                             "%s has a higher than typical average score." % current_evaluatee)
+            analysis_data = (asgn_number, current_evaluatee, "Averages for all Evaluations",
+                         member_averages[current_evaluatee])
+            analysis_object = setAnalysisData(project, analysis_data)
+            analysis_flag = "%s has a higher than typical average score." % current_evaluatee
             setFlag(analysis_object, analysis_flag)
         # bounds[0] is the low bound.
         elif member_averages[current_evaluatee] <= bounds[0]:
-            analysis_flag = (False,
-                             "%s has a lower than typical average score." % current_evaluatee)
+            analysis_data = (asgn_number, current_evaluatee, "Averages for all Evaluations",
+                         member_averages[current_evaluatee])
+            analysis_object = setAnalysisData(project, analysis_data)
+            analysis_flag = "%s has a lower than typical average score." % current_evaluatee
             setFlag(analysis_object, analysis_flag)
     return member_averages
     
@@ -1445,8 +1556,36 @@ def setAnalysisData(project, analysisData):
 
 #the wrapper function :updates the piece of analysis with the correct flag information
 #preconditions:( AnalysisObject, ([boolean] flag_tripped, [String]flag_detail))
-def setFlag(analysis_object, flag_info):
-    analysis_object.flag_tripped = flag_info[0]
-    analysis_object.flag_detail = flag_info[1]
+def setFlag(analysis_object, flag_details):
+    analysis_object.flag_detail = flag_details
     analysis_object.save()
 
+
+#takes in a request, slug to identify the analysis where flag is suppressed and belongs to the specific tsr
+def unsuppress_Tsr_Flags(request, project):
+    tsr_num = int(request.POST.get('tsr_number_input',None))
+    suppressed_analysis_flags = project.analysis.all().filter(Q(flag_suppressed__exact = True) & Q(tsr_number__exact = tsr_num))
+
+    for flag in suppressed_analysis_flags:
+
+        flag.flag_suppressed = False
+        flag.save()
+
+
+def mark_Suppressed(request,project,suppressed_flags_array):
+    # checks flags in the suppressed_Items POST array. if there, changes suppression to true
+    tsr_num = request.POST.get('tsr_number_input',None)
+    for flag_id in suppressed_flags_array :
+        updated_flag = project.analysis.get(id= flag_id)
+        if(str(updated_flag.tsr_number) == tsr_num):
+            updated_flag.flag_suppressed = True
+            updated_flag.save()
+            print(updated_flag.flag_suppressed)
+ 
+   
+
+
+
+
+
+    
